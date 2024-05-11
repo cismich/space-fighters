@@ -50,6 +50,16 @@ class scena:
 
 
 class HraScena(scena):
+    def __init__(self, root, hra, nazev : str):
+       scena.__init__(self, root, hra, nazev)
+       self.window.columnconfigure(2, weight=1)
+       self.window.rowconfigure(1, weight=1)
+
+       self.GameScreen = tk.Frame(self.window, background="white").grid(row=1, column=1, sticky="nsew")
+       self.InfoScreen = tk.Frame(self.window, background="black").grid(row=1, column=2, sticky="nsew")
+
+
+
     def update(self):
         print("america ya >:P")
 
@@ -66,6 +76,8 @@ class MenuScena(scena):
     def update(self):
        if self.input == "back":
          self.root.destroy()
+       elif self.input == "shoot":
+          self.hra.LoadScene("Game")
           
         
 
@@ -119,8 +131,11 @@ class hra:
            self.currentScene.load()
 
    def LoadScene(self, scene : str):
+      self.currentScene = None
       if scene == "Menu":
         self.currentScene = MenuScena(self.root, self, "Menu")
+      elif scene == "Game":
+         self.currentScene = HraScena(self.root, self, "Game")
 
 
 
