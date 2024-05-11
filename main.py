@@ -97,7 +97,8 @@ class HraScena(scena):
           if x >= self.spaceX:
              x = 0
              y += 1
-
+       self.Player = Player()
+       self.ObjSpawnAt(self.Player, 9, 1)
 
 
     def update(self):
@@ -113,7 +114,14 @@ class HraScena(scena):
              self.GameObjects[i].configure(text=".")
           elif self.Game[i].getType() == "Player":
              self.GameObjects[i].configure(text="P")
-          
+    def ObjMoveTo(self, obj : object, x, y):
+       return
+    def ObjSpawnAt(self, obj : object, x, y):
+       if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
+        return
+       
+       pos = y * self.spaceX + x
+       self.Game[pos] = obj
 
 class MenuScena(scena):
     def __init__(self, root, hra, nazev : str):
