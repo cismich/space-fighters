@@ -49,8 +49,10 @@ class scena:
 class Object:
    def __init__(self):
       self.x = 0
+      self.y = 0
    def getType(self):
       return "Object"
+
 
 class Player(Object):
    def __init__(self):
@@ -104,24 +106,41 @@ class HraScena(scena):
     def update(self):
         self.s_input()
         self.s_screenUpdate()
-        print("america ya >:P")
     
     def s_input(self):
-       return
+       if self.input == "right":
+          self.ObjMoveToRelative(self.Player, 1, 0)
+       elif self.input == "left":
+          self.ObjMoveToRelative(self.Player, -1, 0)
+       elif self.input == "up":
+          self.ObjMoveToRelative(self.Player, 0, -1)
+       elif self.input == "down":
+          self.ObjMoveToRelative(self.Player, 0, 1)
+       self.input = None
     def s_screenUpdate(self):
        for i in range(self.spaceX * self.spaceY):
           if self.Game[i] == None:
              self.GameObjects[i].configure(text=".")
           elif self.Game[i].getType() == "Player":
              self.GameObjects[i].configure(text="P")
-    def ObjMoveTo(self, obj : object, x, y):
+    def ObjMoveTo(self, obj : Object, x, y):
        return
-    def ObjSpawnAt(self, obj : object, x, y):
+    def ObjSpawnAt(self, obj : Object, x, y):
        if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
         return
        
        pos = y * self.spaceX + x
+       obj.x = x
+       obj.y = y
        self.Game[pos] = obj
+    def ObjMoveToRelative(self, obj : Object, x, y):
+       objPos = obj.y * self.spaceX + obj.x
+       relPos = objPos + x
+       relPos += y * self.spaceX
+       self.Game[objPos] = None
+       self.Game[relPos] = obj
+       obj.x += x
+       obj.y += y
 
 class MenuScena(scena):
     def __init__(self, root, hra, nazev : str):
