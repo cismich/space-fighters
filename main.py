@@ -46,22 +46,74 @@ class scena:
                case "shoot":
                  self.input = "shoot"
 
+class Object:
+   def __init__(self):
+      self.x = 0
+   def getType(self):
+      return "Object"
 
+class Player(Object):
+   def __init__(self):
+      super().__init__()
+   def getType(self):
+      return "Player"
 
 
 class HraScena(scena):
     def __init__(self, root, hra, nazev : str):
        scena.__init__(self, root, hra, nazev)
-       self.window.columnconfigure(2, weight=1)
-       self.window.rowconfigure(1, weight=1)
+       self.window.columnconfigure(1, weight=1)
+       #self.window.rowconfigure(1, weight=1)
 
-       self.GameScreen = tk.Frame(self.window, background="white").grid(row=1, column=1, sticky="nsew")
-       self.InfoScreen = tk.Frame(self.window, background="black").grid(row=1, column=2, sticky="nsew")
+       self.GameScreen = tk.Frame(self.window, background="black")
+       self.InfoScreen = tk.Frame(self.window, background="black")
+       
+       self.GameScreen.grid(row=1, column=1, sticky="nsew")
+       self.InfoScreen.grid(row=1, column=2, sticky="nsew")
+
+       self.InfoScreen.rowconfigure(3,weight=1)
+       self.InfoScreen.columnconfigure(1, weight=1)
+       #info
+       self.levelInfo = tk.Label(self.InfoScreen, text= "Level: 1", background="black", foreground="white", font=("Cascadia Code", 12))
+       self.levelInfo.grid(row=1, column=1)
+
+       self.pointInfo = tk.Label(self.InfoScreen, text= "Points: 0", background="black", foreground="white", font=("Cascadia Code", 12))
+       self.pointInfo.grid(row=2, column=1)
+
+       #hra
+       self.spaceX = 20
+       self.spaceY = 18
+       self.Game = [None] * (self.spaceX * self.spaceY)
+
+       self.GameObjects = [None] * (self.spaceX * self.spaceY)
+
+       x = 0
+       y = 1
+       for i in range(self.spaceX * self.spaceY):
+          self.GameObjects[i] = tk.Label(self.GameScreen, text=".", background="black", foreground="white")
+          x += 1
+
+          self.GameObjects[i].grid(row=y, column=x)
+          if x >= self.spaceX:
+             x = 0
+             y += 1
 
 
 
     def update(self):
+        self.s_input()
+        self.s_screenUpdate()
         print("america ya >:P")
+    
+    def s_input(self):
+       return
+    def s_screenUpdate(self):
+       for i in range(self.spaceX * self.spaceY):
+          if self.Game[i] == None:
+             self.GameObjects[i].configure(text=".")
+          elif self.Game[i].getType() == "Player":
+             self.GameObjects[i].configure(text="P")
+          
 
 class MenuScena(scena):
     def __init__(self, root, hra, nazev : str):
