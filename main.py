@@ -9,8 +9,6 @@ class scena:
     def __init__(self, root, hra, nazev : str):
         self.hra = hra
         self.root = root
-        self.objects = []
-        self.widgets = []
         self.window = tk.Frame(self.root, background = "black")
         self.window.grid(row=1, column=1, sticky="nsew")
         self.isloaded = False
@@ -34,19 +32,19 @@ class scena:
     def updateInput(self, gameInput : str):
         match gameInput:
                case "up":
-                self.input = "up"
+                 self.input = "up"
                case "down":
-                self.input = "down"
+                 self.input = "down"
                case "left":
-                self.input = "left"
+                 self.input = "left"
                case "right":
-                self.input = "right"
+                 self.input = "right"
                case "interact":
-                self.input = "interact"
+                 self.input = "interact"
                case "back":
-                self.input = "back"
+                 self.input = "back"
                case "shoot":
-                self.input = "shoot"
+                 self.input = "shoot"
 
 
 
@@ -59,10 +57,16 @@ class MenuScena(scena):
     def __init__(self, root, hra, nazev : str):
        scena.__init__(self, root, hra, nazev)
        
-       tk.Label(self.window, text= "Space Fighters", background="black", foreground="white", font=("Helvetica", 24)).place(relx=0.365, rely=0.2)
+       self.window.rowconfigure(5, weight=1)
+       self.window.columnconfigure(1, weight=1)
+       tk.Label(self.window, text= "Space Fighters", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
+       tk.Label(self.window, text= "Start [Mezernik]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=2, column=1, sticky="nsew")
+       tk.Label(self.window, text= "odejit [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
 
     def update(self):
-       return
+       if self.input == "back":
+         self.root.destroy()
+          
         
 
 
@@ -100,7 +104,7 @@ class hra:
        self.root.after(100, self.update)
    def inputUpdate(self):
        if self.currentInput:
-          self.currentScene.updateInput(self.CaptureInput)
+          self.currentScene.updateInput(self.currentInput)
 
        self.currentInput = None
        return
