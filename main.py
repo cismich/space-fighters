@@ -62,14 +62,21 @@ class Nepritel(Object):
         return "Enemy"
 
 class Strela(Object):
-    def __init__(self):
+    def __init__(self, maxTime : int):
         super().__init__()
+        self.time = 0
+        self.maxBulletTime = maxTime
 
     def getType(self):
         return "Bullet"
 
     def Update(self, hraScena):
         hraScena.ObjMoveToRelative(self, 0, -1)
+
+        if self.time >= self.maxBulletTime:
+            hraScena.ObjDestory(self)
+        self.time += 100
+
 
 class HraScena(scena):
    def __init__(self, root, hra, nazev : str):
@@ -92,6 +99,10 @@ class HraScena(scena):
       self.spaceY = 18
       self.Game = [None] * (self.spaceX * self.spaceY)
       self.GameObjects = [None] * (self.spaceX * self.spaceY)
+
+      #nastaveni
+      self.maxBulletTime = 500
+
       x = 0
       y = 1
       for i in range(self.spaceX * self.spaceY):
@@ -122,7 +133,7 @@ class HraScena(scena):
          self.ObjMoveToRelative(self.Player, 0, 1)
 
       if self.input == "shoot":
-          newBullet = Strela()
+          newBullet = Strela(self.maxBulletTime)
           self.GameObjects.append(newBullet)
           self.ObjSpawnAt(newBullet, self.Player.x, self.Player.y - 1)
       self.input = None
@@ -143,10 +154,14 @@ class HraScena(scena):
        newPos = y * self.spaceX + x
        self.Game[objPos] = None
        self.Game[newPos] = obj
-   def ObjSpawnAt(self, obj : Object, x, y):
+   def ObjSpawnAt(self, obj : Object, x, y, force = False):
       if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
        return
       pos = y * self.spaceX + x
+      if self.Game[pos] and not force:
+          return
+      if self.Game[pos] and self.Game[pos].getType() == "Player":
+          return
       obj.x = x
       obj.y = y
       self.Game[pos] = obj
@@ -156,10 +171,18 @@ class HraScena(scena):
       relPos += y * self.spaceX
       if relPos < 0 or relPos >= (self.spaceX * self.spaceY):
        return
+
+      if self.Game[relPos] and not force:
+          return
+      if self.Game[relPos] and self.Game[relPos].getType() == "Player":
+          return
       self.Game[objPos] = None
       self.Game[relPos] = obj
       obj.x += x
       obj.y += y
+   def ObjDestory(self, obj : Object):
+       objPos = obj.y * self.spaceX + obj.x
+       self.Game[objPos] = None
 
 
 class MenuScena(scena):
