@@ -55,11 +55,15 @@ class Player(Object):
      return "Player"
 
 class Nepritel(Object):
-    def __init__(self):
+    def __init__(self, lives = 1):
         super().__init__()
+        self.lives = lives
 
     def getType(self):
         return "Enemy"
+    def hit(self, poskozeni = 1):
+       self.lives -= poskozeni
+          
 
 class Strela(Object):
     def __init__(self, maxTime : int):
@@ -79,7 +83,7 @@ class Strela(Object):
 
 
 class HraScena(scena):
-   def __init__(self, root, hra, nazev : str):
+   def __init__(self, root, hra, nazev : str, vlna = 1):
       scena.__init__(self, root, hra, nazev)
       self.window.columnconfigure(1, weight=1)
       #self.window.rowconfigure(1, weight=1)
@@ -94,14 +98,24 @@ class HraScena(scena):
       self.levelInfo.grid(row=1, column=1)
       self.pointInfo = tk.Label(self.InfoScreen, text= "Points: 0", background="black", foreground="white", font=("Cascadia Code", 12))
       self.pointInfo.grid(row=2, column=1)
+      self.pointInfo = tk.Label(self.InfoScreen, text= "♡ ♡ ♡", background="black", foreground="white", font=("Cascadia Code", 12))
+      self.pointInfo.grid(row=3, column=1)
+
       #hra
       self.spaceX = 20
       self.spaceY = 18
       self.Game = [None] * (self.spaceX * self.spaceY)
       self.GameObjects = [None] * (self.spaceX * self.spaceY)
+      
+      self.pocetNepratel = 0
+      self.vlna = vlna
+      self.neprateleNaVlnu = self.vlna * 3
+      self.zabitiNepratele = 0
 
       #nastaveni
       self.maxBulletTime = 500
+      self.lives = 3
+      self.poskozeni = 1
 
       x = 0
       y = 1
@@ -122,6 +136,22 @@ class HraScena(scena):
        for i in self.Game:
            if i:
             i.Update(self)
+      
+      #vlny atd
+       
+       for i in range(self.neprateleNaVlnu - self.pocetNepratel):
+          obj = Nepritel(self.vlna)
+          if self.ObjSpawnAt(obj, randint(0,19), randint(0, 5)):
+            self.pocetNepratel += 1
+       
+       if self.zabitiNepratele >= self.neprateleNaVlnu:
+          self.hra.LoadScene("Shop")
+
+
+
+
+
+
    def s_input(self):
       if self.input == "right":
          self.ObjMoveToRelative(self.Player, 1, 0)
@@ -165,21 +195,41 @@ class HraScena(scena):
       obj.x = x
       obj.y = y
       self.Game[pos] = obj
-   def ObjMoveToRelative(self, obj : Object, x, y):
+      return True
+   def ObjMoveToRelative(self, obj : Object, x, y, force = False):
       objPos = obj.y * self.spaceX + obj.x
       relPos = objPos + x
       relPos += y * self.spaceX
       if relPos < 0 or relPos >= (self.spaceX * self.spaceY):
        return
 
+      if self.Game[relPos] and obj.getType() == "Bullet":
+         if self.Game[relPos].getType() == "Player":
+            self.ObjDestory(obj)
+            self.lives -= 1
+            return True
+         
+         if self.Game[relPos].getType() == "Enemy":
+            self.ObjDestory(obj)
+            self.Game[relPos].hit(self.poskozeni)
+            if self.Game[relPos].lives <= 0:
+               self.ObjDestory(self.Game[relPos])
+               self.pocetNepratel -= 1
+               self.zabitiNepratele += 1
+   
+            return True
+
+
       if self.Game[relPos] and not force:
           return
       if self.Game[relPos] and self.Game[relPos].getType() == "Player":
           return
+      
       self.Game[objPos] = None
       self.Game[relPos] = obj
       obj.x += x
       obj.y += y
+      return True
    def ObjDestory(self, obj : Object):
        objPos = obj.y * self.spaceX + obj.x
        self.Game[objPos] = None
@@ -199,6 +249,20 @@ class MenuScena(scena):
       elif self.input == "shoot":
          self.hra.LoadScene("Game")
 
+class ObchodScena(scena):
+   def __init__(self, root, hra, nazev : str):
+      scena.__init__(self, root, hra, nazev)
+      self.window.rowconfigure(5, weight=1)
+      self.window.columnconfigure(1, weight=1)
+      tk.Label(self.window, text= "Obchod", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
+      tk.Label(self.window, text= "Body: 1000", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=2, column=1, sticky="nsew")
+      tk.Label(self.window, text= "Pokracovat bez nakupu [Mezernik]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
+      tk.Label(self.window, text= "Ukoncit hru [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=4, column=1, sticky="nsew")
+   def update(self):
+      if self.input == "back":
+        self.root.destroy()
+      elif self.input == "shoot":
+         self.hra.LoadScene("Game")
 
 class hra:
   def __init__(self):
@@ -242,12 +306,14 @@ class hra:
           self.currentScene = scena(self.root, self, "Main")
       if not self.currentScene.isloaded :
           self.currentScene.load()
-  def LoadScene(self, scene : str):
+  def LoadScene(self, scene : str, arg = 1):
      self.currentScene = None
      if scene == "Menu":
        self.currentScene = MenuScena(self.root, self, "Menu")
      elif scene == "Game":
         self.currentScene = HraScena(self.root, self, "Game")
+     elif scene == "Shop":
+        self.currentScene = ObchodScena(self.root, self, "Shop", arg)
 
 
   def CaptureInput(self, inputStr : str):
