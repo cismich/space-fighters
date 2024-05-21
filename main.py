@@ -3,6 +3,15 @@ import math
 import time
 import tkinter as tk
 import os
+
+shared = {
+   "vlna" : 1,
+   "body" : 0,
+   "u_dostrel" : 0,
+   "u_poskozeni" : 0,
+   "u_zivot" : 0
+}
+
 class scena:
    def __init__(self, root, hra, nazev : str):
        self.hra = hra
@@ -83,7 +92,7 @@ class Strela(Object):
 
 
 class HraScena(scena):
-   def __init__(self, root, hra, nazev : str, vlna = 1):
+   def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
       self.window.columnconfigure(1, weight=1)
       #self.window.rowconfigure(1, weight=1)
@@ -108,14 +117,14 @@ class HraScena(scena):
       self.GameObjects = [None] * (self.spaceX * self.spaceY)
       
       self.pocetNepratel = 0
-      self.vlna = vlna
+      self.vlna = shared["vlna"]
       self.neprateleNaVlnu = self.vlna * 3
       self.zabitiNepratele = 0
 
       #nastaveni
-      self.maxBulletTime = 500
-      self.lives = 3
-      self.poskozeni = 1
+      self.maxBulletTime = 500 + (shared["u_dostrel"] * 100)
+      self.lives = 3 + shared["u_zivot"]
+      self.poskozeni = 1 + shared["u_poskozeni"]
 
       x = 0
       y = 1
@@ -145,6 +154,7 @@ class HraScena(scena):
             self.pocetNepratel += 1
        
        if self.zabitiNepratele >= self.neprateleNaVlnu:
+          shared["vlna"] += 1
           self.hra.LoadScene("Shop")
 
 
@@ -216,6 +226,7 @@ class HraScena(scena):
                self.ObjDestory(self.Game[relPos])
                self.pocetNepratel -= 1
                self.zabitiNepratele += 1
+               shared["body"] += 100
    
             return True
 
@@ -252,17 +263,41 @@ class MenuScena(scena):
 class ObchodScena(scena):
    def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
-      self.window.rowconfigure(5, weight=1)
+      #self.window.rowconfigure(5, weight=1)
       self.window.columnconfigure(1, weight=1)
       tk.Label(self.window, text= "Obchod", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
-      tk.Label(self.window, text= "Body: 1000", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=2, column=1, sticky="nsew")
-      tk.Label(self.window, text= "Pokracovat bez nakupu [Mezernik]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
-      tk.Label(self.window, text= "Ukoncit hru [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=4, column=1, sticky="nsew")
+      tk.Label(self.window, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=2, column=1, sticky="nsew")
+      tk.Label(self.window, text= "Pokracovat [Mezernik]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
+      tk.Label(self.window, text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=4, column=1, sticky="nsew")
+      tk.Label(self.window, text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=5, column=1, sticky="nsew")
+      tk.Label(self.window, text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=6, column=1, sticky="nsew")
+      tk.Label(self.window, text= "Ukoncit hru [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=7, column=1, sticky="nsew")
+      self.wait = True
    def update(self):
+      if self.wait == True:
+         time.sleep(0.5)
+         self.wait = False
+         self.input = None
+         return
       if self.input == "back":
         self.root.destroy()
       elif self.input == "shoot":
          self.hra.LoadScene("Game")
+      elif self.input == "right":
+         self.koupit("u_dostrel")
+      elif self.input == "left":
+         self.koupit("u_poskozeni")
+      elif self.input == "up":
+         self.koupit("u_zivot")
+      self.input = None
+   def koupit(self, upgrade):
+      cena = ((shared[upgrade] * 2) + 1) * 100
+      if shared["body"] < cena:
+         return
+      
+      shared["body"] -= cena
+      shared[upgrade] += 1
+      self.hra.LoadScene("Shop")
 
 class hra:
   def __init__(self):
@@ -306,14 +341,14 @@ class hra:
           self.currentScene = scena(self.root, self, "Main")
       if not self.currentScene.isloaded :
           self.currentScene.load()
-  def LoadScene(self, scene : str, arg = 1):
+  def LoadScene(self, scene : str):
      self.currentScene = None
      if scene == "Menu":
        self.currentScene = MenuScena(self.root, self, "Menu")
      elif scene == "Game":
         self.currentScene = HraScena(self.root, self, "Game")
      elif scene == "Shop":
-        self.currentScene = ObchodScena(self.root, self, "Shop", arg)
+        self.currentScene = ObchodScena(self.root, self, "Shop")
 
 
   def CaptureInput(self, inputStr : str):
