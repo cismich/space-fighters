@@ -266,28 +266,23 @@ class ObchodScena(scena):
       #self.window.rowconfigure(5, weight=1)
       self.window.columnconfigure(1, weight=1)
       tk.Label(self.window, text= "Obchod", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
-      tk.Label(self.window, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=2, column=1, sticky="nsew")
+      self.body = tk.Label(self.window, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.body.grid(row=2, column=1, sticky="nsew")
       tk.Label(self.window, text= "Pokracovat [Mezernik]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
-      tk.Label(self.window, text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=4, column=1, sticky="nsew")
-      tk.Label(self.window, text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=5, column=1, sticky="nsew")
-      tk.Label(self.window, text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=6, column=1, sticky="nsew")
+      self.dostrel = tk.Label(self.window, text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.dostrel.grid(row=4, column=1, sticky="nsew")
+      self.poskozeni = tk.Label(self.window, text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.poskozeni.grid(row=5, column=1, sticky="nsew")
+      self.zivot = tk.Label(self.window, text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.zivot.grid(row=6, column=1, sticky="nsew")
       tk.Label(self.window, text= "Ukoncit hru [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=7, column=1, sticky="nsew")
       self.wait = True
    def update(self):
-      if self.wait == True:
-         time.sleep(0.5)
-         self.wait = False
-         self.input = None
-         return
       if self.input == "back":
         self.root.destroy()
-      elif self.input == "shoot":
-         self.hra.LoadScene("Game")
-      elif self.input == "right":
+      elif self.input == "interact":
          self.koupit("u_dostrel")
-      elif self.input == "left":
-         self.koupit("u_poskozeni")
-      elif self.input == "up":
+      elif self.input == "down":
          self.koupit("u_zivot")
       self.input = None
    def koupit(self, upgrade):
@@ -297,7 +292,11 @@ class ObchodScena(scena):
       
       shared["body"] -= cena
       shared[upgrade] += 1
-      self.hra.LoadScene("Shop")
+      self.body.configure(text= f"Body: {shared['body']}")
+      self.dostrel.configure(text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]")
+      self.poskozeni.configure(text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]")
+      self.zivot.configure(text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]")
+      
 
 class hra:
   def __init__(self):
