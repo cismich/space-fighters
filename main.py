@@ -67,28 +67,41 @@ class Nepritel(Object):
     def __init__(self, lives = 1):
         super().__init__()
         self.lives = lives
+        self.Movecounter = 10 - lives
 
     def getType(self):
         return "Enemy"
     def hit(self, poskozeni = 1):
        self.lives -= poskozeni
+    
+    def Update(self, hraScena):
+      if self.Movecounter <= 0:
+         self.Movecounter = 10 - self.lives
+         hraScena.ObjMoveToRelative(self, randint(-1,1),randint(0,1))
+      self.Movecounter -= 1
+      if self.y > 13:
+         hraScena.lives -= 1
+         hraScena.ObjDestory(self)
+
           
 
 class Strela(Object):
-    def __init__(self, maxTime : int):
+    def __init__(self, maxTime : int, enemy = False):
         super().__init__()
         self.time = 0
         self.maxBulletTime = maxTime
+        self.enemy = enemy
 
     def getType(self):
         return "Bullet"
 
     def Update(self, hraScena):
-        hraScena.ObjMoveToRelative(self, 0, -1)
+        if not hraScena.ObjMoveToRelative(self, 0, -1):
+            hraScena.ObjDestory(self)
 
+        self.time += 100
         if self.time >= self.maxBulletTime:
             hraScena.ObjDestory(self)
-        self.time += 100
 
 
 class HraScena(scena):
@@ -174,19 +187,22 @@ class HraScena(scena):
 
       if self.input == "shoot":
           newBullet = Strela(self.maxBulletTime)
-          self.GameObjects.append(newBullet)
+          #self.GameObjects.append(newBullet)
           self.ObjSpawnAt(newBullet, self.Player.x, self.Player.y - 1)
       self.input = None
    def s_screenUpdate(self):
       for i in range(self.spaceX * self.spaceY):
          if self.Game[i] == None:
-            self.GameObjects[i].configure(text=".")
+            if i > 14*19-7 and i < 14*19+14:
+               self.GameObjects[i].configure(text="-")
+            else:
+               self.GameObjects[i].configure(text=" ")
          elif self.Game[i].getType() == "Player":
-            self.GameObjects[i].configure(text="P")
+            self.GameObjects[i].configure(text="Δ")
          elif self.Game[i].getType() == "Enemy":
-            self.GameObjects[i].configure(text="E")
+            self.GameObjects[i].configure(text="∇")
          elif self.Game[i].getType() == "Bullet":
-            self.GameObjects[i].configure(text="B")
+            self.GameObjects[i].configure(text="|")
    def ObjMoveTo(self, obj : Object, x, y):
        if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
            return
@@ -198,6 +214,16 @@ class HraScena(scena):
       if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
        return
       pos = y * self.spaceX + x
+      if self.Game[pos] and obj.getType() == "Bullet":
+         if self.Game[pos].getType() == "Enemy":
+            self.Game[pos].hit(self.poskozeni)
+            if self.Game[pos].lives <= 0:
+               self.ObjDestory(self.Game[pos])
+               self.pocetNepratel -= 1
+               self.zabitiNepratele += 1
+               shared["body"] += 100
+   
+            return True
       if self.Game[pos] and not force:
           return
       if self.Game[pos] and self.Game[pos].getType() == "Player":
@@ -212,6 +238,12 @@ class HraScena(scena):
       relPos += y * self.spaceX
       if relPos < 0 or relPos >= (self.spaceX * self.spaceY):
        return
+      
+      if x < 0 and (obj.x % self.spaceX) <1:
+         return
+      
+      if x > 0 and (obj.x % self.spaceX) > (self.spaceX - 2):
+         return
 
       if self.Game[relPos] and obj.getType() == "Bullet":
          if self.Game[relPos].getType() == "Player":
