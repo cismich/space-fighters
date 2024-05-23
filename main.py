@@ -41,12 +41,18 @@ class scena:
                 self.input = "left"
               case "right":
                 self.input = "right"
-              case "interact":
-                self.input = "interact"
-              case "back":
-                self.input = "back"
               case "shoot":
                 self.input = "shoot"
+              case "e":
+                self.input = "e"
+              case "r":
+                self.input = "r"
+              case "t":
+                self.input = "t"
+              case "f":
+                self.input = "f"
+              case "back":
+                self.input = "back"
 class Object:
   def __init__(self):
      self.x = 0
@@ -300,21 +306,25 @@ class ObchodScena(scena):
       tk.Label(self.window, text= "Obchod", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
       self.body = tk.Label(self.window, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 18))
       self.body.grid(row=2, column=1, sticky="nsew")
-      tk.Label(self.window, text= "Pokracovat [Mezernik]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
-      self.dostrel = tk.Label(self.window, text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]", background="black", foreground="white", font=("Cascadia Code", 18))
+      tk.Label(self.window, text= "Pokracovat [e]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
+      self.dostrel = tk.Label(self.window, text= f"Vylepseni dostrelu ({((shared['u_dostrel'] * 2) + 1) * 100}) [r]", background="black", foreground="white", font=("Cascadia Code", 18))
       self.dostrel.grid(row=4, column=1, sticky="nsew")
-      self.poskozeni = tk.Label(self.window, text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.poskozeni = tk.Label(self.window, text= f"Vylepseni poskozeni ({((shared['u_poskozeni'] * 2) + 1) * 100}) [t]", background="black", foreground="white", font=("Cascadia Code", 18))
       self.poskozeni.grid(row=5, column=1, sticky="nsew")
-      self.zivot = tk.Label(self.window, text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.zivot = tk.Label(self.window, text= f"Vylepseni zivotu ({((shared['u_zivot'] * 2) + 1) * 100}) [f]", background="black", foreground="white", font=("Cascadia Code", 18))
       self.zivot.grid(row=6, column=1, sticky="nsew")
       tk.Label(self.window, text= "Ukoncit hru [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=7, column=1, sticky="nsew")
       self.wait = True
    def update(self):
       if self.input == "back":
         self.root.destroy()
-      elif self.input == "interact":
+      elif self.input == "e":
+         self.hra.LoadScene("Game")
+      elif self.input == "r":
          self.koupit("u_dostrel")
-      elif self.input == "down":
+      elif self.input == "t":
+         self.koupit("u_poskozeni")
+      elif self.input == "f":
          self.koupit("u_zivot")
       self.input = None
    def koupit(self, upgrade):
@@ -324,10 +334,12 @@ class ObchodScena(scena):
       
       shared["body"] -= cena
       shared[upgrade] += 1
-      self.body.configure(text= f"Body: {shared['body']}")
-      self.dostrel.configure(text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]")
-      self.poskozeni.configure(text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]")
-      self.zivot.configure(text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]")
+
+      self.hra.LoadScene("Shop")
+      #self.body.configure(text= f"Body: {shared['body']}")
+      #self.dostrel.configure(text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]")
+      #self.poskozeni.configure(text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]")
+      #self.zivot.configure(text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]")
       
 
 class hra:
@@ -346,7 +358,10 @@ class hra:
       self.root.bind("s", lambda e : self.CaptureInput("down"))
       self.root.bind("a", lambda e : self.CaptureInput("left"))
       self.root.bind("d", lambda e : self.CaptureInput("right"))
-      self.root.bind("e", lambda e : self.CaptureInput("interact"))
+      self.root.bind("e", lambda e : self.CaptureInput("e"))
+      self.root.bind("r", lambda e : self.CaptureInput("r"))
+      self.root.bind("t", lambda e : self.CaptureInput("t"))
+      self.root.bind("f", lambda e : self.CaptureInput("f"))
       self.root.bind("q", lambda e : self.CaptureInput("back"))
       self.root.bind("<space>", lambda e : self.CaptureInput("shoot"))
       self.currentInput : str = None
