@@ -1,9 +1,8 @@
-from random import randint, choice
-import math
-import time
+from random import randint
 import tkinter as tk
-import os
 
+#pro uchovavani informaci ktere jsou dostupne vsude
+# u_ je zkratka pro "upgrade"
 shared = {
    "vlna" : 1,
    "body" : 0,
@@ -12,14 +11,36 @@ shared = {
    "u_zivot" : 0
 }
 
+
+#
+#
+#  hra > scena > window > objekty
+#
+#
+# hra (classa definovana na konci programu) zachytava input a spravuje sceny
+# scena - ruzne napr. Menu, hra, obchod. kazda obsahuje window
+# window - je tk.Frame vsechno ve scene se na tomto okne nachazi, tohle umoznuje rychle smazat vsechno ve scene
+# objekty - vsechny objekty ve scene
+
+#vetsina class obsahuje funkci "update" ktera bezi kazdy snimek
+
+#tato classa obsahuje zakladni funkce ktere by sceny meli mit
 class scena:
    def __init__(self, root, hra, nazev : str):
+
+       #reference na hru a tk.root 
        self.hra = hra
        self.root = root
+       
+
        self.window = tk.Frame(self.root, background = "black")
        self.window.grid(row=1, column=1, sticky="nsew")
+       
        self.isloaded = False
+       
+       #aktualni input 
        self.input = None
+
        self.nazev = nazev
    def __del__(self):
       self.unload()
@@ -27,11 +48,17 @@ class scena:
        self.isloaded = True
        return
    def unload(self):
+       
+       #smaze vsechny objekty ve scene
        self.window.destroy()
    def update(self):
+       
+       #pokud je z najeko duvodu vytvorena tato zakladni classa ve ktere se nic nenachazi, nacteme hlavni menu abychom se nezasekli
+
        hra.LoadScene(self.hra, "Menu")
        return
    def updateInput(self, gameInput : str):
+       #hra nam touto funkci preda posledni input ktery si ulozime
        match gameInput:
               case "up":
                 self.input = "up"
@@ -53,6 +80,8 @@ class scena:
                 self.input = "f"
               case "back":
                 self.input = "back"
+
+#zakladni classa pro objekt, obsahuje pozici a funkci pro zjisteni typu objektu
 class Object:
   def __init__(self):
      self.x = 0
@@ -63,46 +92,58 @@ class Object:
   def Update(self, hraScena):
       return
 
+# classa pro hrace
+# mozna by bylo lepsi do teto classy presunout pohyb hrace, ktery se ted zpracovava v hlavni scene
 class Player(Object):
   def __init__(self):
      super().__init__()
   def getType(self):
      return "Player"
 
+# classa pro nepritele
+# zpracovava pohyb nepritel
 class Nepritel(Object):
     def __init__(self, lives = 1):
         super().__init__()
         self.lives = lives
+
+        # aby se nepratele nepohybovali moc rychle tak se mohou pohnout jenom kdyz pocitadlo dosahne 0
+        # nepratele maji v kazde dalsi vlne vice zivotu takze by se meli postupne zrychlovat
         self.Movecounter = 10 - lives
 
     def getType(self):
         return "Enemy"
     def hit(self, poskozeni = 1):
+       #pri zasahu nepritele tato funkce odecte zivot
        self.lives -= poskozeni
     
     def Update(self, hraScena):
+      #pohneme se nahodnym smerem kdyz (nahoru nemuzeme) pocitadlo dosahne 0
       if self.Movecounter <= 0:
          self.Movecounter = 10 - self.lives
          hraScena.ObjMoveToRelative(self, randint(-1,1),randint(0,1))
       self.Movecounter -= 1
+
+      #pokud prekrocime caru tak odecteme zivot hraci
       if self.y > 13:
          hraScena.lives -= 1
          hraScena.pocetNepratel -= 1
          hraScena.ObjDestory(self)
 
           
-
+#classa pro strely
+#kazda strela po urcitem case (da se prodlouzit vylepsenim) zmizi
 class Strela(Object):
-    def __init__(self, maxTime : int, enemy = False):
+    def __init__(self, maxTime : int):
         super().__init__()
         self.time = 0
         self.maxBulletTime = maxTime
-        self.enemy = enemy
 
     def getType(self):
         return "Bullet"
 
     def Update(self, hraScena):
+        #pokud se nemuzeme pohnout tak jsme (snad) na konci herniho pole a strelu muzeme smazat
         if not hraScena.ObjMoveToRelative(self, 0, -1):
             hraScena.ObjDestory(self)
 
@@ -110,43 +151,58 @@ class Strela(Object):
         if self.time >= self.maxBulletTime:
             hraScena.ObjDestory(self)
 
-
+#hlavni scena pro hru
 class HraScena(scena):
    def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
       self.window.columnconfigure(1, weight=1)
-      #self.window.rowconfigure(1, weight=1)
+
+      #scena je rozdelena na 2 poloviny, na leve strane je hra a na prave info
       self.GameScreen = tk.Frame(self.window, background="black")
-      self.InfoScreen = tk.Frame(self.window, background="black")
       self.GameScreen.grid(row=1, column=1, sticky="nsew")
+
+      self.InfoScreen = tk.Frame(self.window, background="black")
       self.InfoScreen.grid(row=1, column=2, sticky="nsew")
-      #self.InfoScreen.rowconfigure(3,weight=1)
       self.InfoScreen.columnconfigure(1, weight=1)
+
+
       #info
       self.levelInfo = tk.Label(self.InfoScreen, text= f"Vlna: {shared['vlna']}", background="black", foreground="white", font=("Cascadia Code", 24))
-      self.levelInfo.grid(row=1, column=1)
       self.pointInfo = tk.Label(self.InfoScreen, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 24))
-      self.pointInfo.grid(row=2, column=1)
       self.zivotInfo = tk.Label(self.InfoScreen, text= "♡ " * (shared['u_zivot'] + 3), background="black", foreground="white", font=("Cascadia Code", 24))
-      self.zivotInfo.grid(row=3, column=1)
 
+      self.levelInfo.grid(row=1, column=1)
+      self.pointInfo.grid(row=2, column=1)
+      self.zivotInfo.grid(row=3, column=1)
+      
       #hra
+      
+      #herni pole je 20*18, spaceX (nejedna se o firmu Elona Muska) je velikost pole na ose X, a spaceY je velikost na ose y.
       self.spaceX = 20
       self.spaceY = 18
+      
+      #Game je seznam prazdnych polich a class napr. hrac, strela, nepritel
       self.Game = [None] * (self.spaceX * self.spaceY)
+
+      #GameObjects se pozdeji naplni tk.Label objekty, slouzi jako "zobrazeni" listu Game
+      #napr. kdyz je na Game[3] classa strely tak se text GameObjects[3] zmeni na "|" 
       self.GameObjects = [None] * (self.spaceX * self.spaceY)
       
-      self.pocetNepratel = 0
+      self.pocetNepratel = 0 #pocet nepratel ktere prave zijou
       self.vlna = shared["vlna"]
-      self.neprateleNaVlnu = self.vlna * 3
+      self.neprateleNaVlnu = self.vlna * 3 
       self.zabitiNepratele = 0
 
-      #nastaveni
+      #upgrady
       self.maxBulletTime = 500 + (shared["u_dostrel"] * 100)
-      self.lives = 3 + shared["u_zivot"]
-      shared["u_zivot"] = 0
       self.poskozeni = 1 + shared["u_poskozeni"]
 
+      #na zacatku vezmeme dokoupene zivoty a pridame je k tem co dostaneme na zacatku kazde vlny
+      self.lives = 3 + shared["u_zivot"]
+      shared["u_zivot"] = 0
+      
+      
+      #zaplneni listu GameObjects
       x = 0
       y = 1
       for i in range(self.spaceX * self.spaceY):
@@ -156,34 +212,41 @@ class HraScena(scena):
          if x >= self.spaceX:
             x = 0
             y += 1
+      
+      #vytvorime hrace a spawneme ho do sceny
       self.Player = Player()
       self.ObjSpawnAt(self.Player, 9, 16)
 
    def update(self):
+       
        self.s_input()
        self.s_screenUpdate()
 
+       #aktualizujeme kazdy objekt ve scene
        for i in self.Game:
            if i:
             i.Update(self)
       
-      #vlny atd
-       
+       #snazime se udrzet pocet nepratel ve scene 
        for i in range(self.neprateleNaVlnu - self.pocetNepratel):
           obj = Nepritel(self.vlna)
           if self.ObjSpawnAt(obj, randint(0,19), randint(0, 5)):
             self.pocetNepratel += 1
        
+       #pokud porazime vsechny nepratele ve vlne tak muzeme pokracovat do obchodu
        if self.zabitiNepratele >= self.neprateleNaVlnu:
           shared["vlna"] += 1
+
+          #pokud mame vice jak 3 zivoty (to znamena ze jsme nejake minule koupili a nepouzili) tak je vratime
           if self.lives > 3:
              shared["u_zivot"] = self.lives - 3
           self.hra.LoadScene("Shop")
 
-       
+       #aktualizace textu
        self.pointInfo.configure(text= f"Body: {shared['body']}")
        self.zivotInfo.configure(text= "♡ " * self.lives)
 
+       #kdyz dojdou zivoty, tak koncime
        if self.lives <= 0:
           self.hra.LoadScene("Konec")
 
@@ -193,6 +256,7 @@ class HraScena(scena):
 
 
    def s_input(self):
+      #pohyb hrace
       if self.input == "right":
          self.ObjMoveToRelative(self.Player, 1, 0)
       elif self.input == "left":
@@ -204,23 +268,35 @@ class HraScena(scena):
 
       if self.input == "shoot":
           newBullet = Strela(self.maxBulletTime)
-          #self.GameObjects.append(newBullet)
           self.ObjSpawnAt(newBullet, self.Player.x, self.Player.y - 1)
+
+      #aby se vicekrat neopakoval input tak ho na konci nastavime na prazdnou hodnotu
       self.input = None
    def s_screenUpdate(self):
+      #zobrazovani hry
+
       for i in range(self.spaceX * self.spaceY):
+         
+         #podle toho co je na Game[i] tak aktualizujeme text na GameObjects[i]
+
          if self.Game[i] == None:
+
+            #vytvari caru, kterou kdyz nepratele prekroci tak hrac prijde o 1 zivot
             if i > 14*19-7 and i < 14*19+14:
                self.GameObjects[i].configure(text="-")
             else:
                self.GameObjects[i].configure(text=" ")
+
          elif self.Game[i].getType() == "Player":
             self.GameObjects[i].configure(text="Δ")
          elif self.Game[i].getType() == "Enemy":
             self.GameObjects[i].configure(text="∇")
          elif self.Game[i].getType() == "Bullet":
             self.GameObjects[i].configure(text="|")
+   
    def ObjMoveTo(self, obj : Object, x, y):
+       #posouva objekt na urcitou pozici x,y (moc nepouzivane)
+
        if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
            return
        objPos = obj.y * self.spaceX + obj.x
@@ -228,9 +304,15 @@ class HraScena(scena):
        self.Game[objPos] = None
        self.Game[newPos] = obj
    def ObjSpawnAt(self, obj : Object, x, y, force = False):
+      #vytvori objekt na x,y
+
+      #kontrola jestli se nachazime na hraci plose
       if x >= self.spaceX or y >= self.spaceY or x < 0 or y < 0:
        return
+      
       pos = y * self.spaceX + x
+      
+      #strela muze poskozovat nepritele
       if self.Game[pos] and obj.getType() == "Bullet":
          if self.Game[pos].getType() == "Enemy":
             self.Game[pos].hit(self.poskozeni)
@@ -241,32 +323,42 @@ class HraScena(scena):
                shared["body"] += 100
    
             return True
+      
+      #pokud je pole obsazene a neni dulezite ze se objekt nespawne
       if self.Game[pos] and not force:
           return
+      
+      #nikdy nemuzeme prepsat pole na kterem je hrac
       if self.Game[pos] and self.Game[pos].getType() == "Player":
           return
+      
       obj.x = x
       obj.y = y
       self.Game[pos] = obj
       return True
    def ObjMoveToRelative(self, obj : Object, x, y, force = False):
+      #posune objekt o x, y
+      #napr. kdyz x = 1 tak se objekt posune o 1 pole doprava
+
+      #vypocet nove pozice
       objPos = obj.y * self.spaceX + obj.x
       relPos = objPos + x
       relPos += y * self.spaceX
+
+      #kontrola jestli je nova pozice na hraci plose
       if relPos < 0 or relPos >= (self.spaceX * self.spaceY):
        return
       
+      #kontrola abychom nemohli prochazet steny hraciho pole na ose x
       if x < 0 and (obj.x % self.spaceX) <1:
          return
       
+      #kontrola abychom nemohli prochazet steny hraciho pole na ose y
       if x > 0 and (obj.x % self.spaceX) > (self.spaceX - 2):
          return
 
+      #strela muze poskozovat nepritele
       if self.Game[relPos] and obj.getType() == "Bullet":
-         if self.Game[relPos].getType() == "Player":
-            self.ObjDestory(obj)
-            self.lives -= 1
-            return True
          
          if self.Game[relPos].getType() == "Enemy":
             self.ObjDestory(obj)
@@ -279,9 +371,11 @@ class HraScena(scena):
    
             return True
 
-
+      #pokud je pole obsazene a neni dulezite ze se objekt posune
       if self.Game[relPos] and not force:
           return
+      
+      #nikdy nemuzeme prepsat pole na kterem je hrac
       if self.Game[relPos] and self.Game[relPos].getType() == "Player":
           return
       
@@ -291,10 +385,13 @@ class HraScena(scena):
       obj.y += y
       return True
    def ObjDestory(self, obj : Object):
+       #smaze objekt
        objPos = obj.y * self.spaceX + obj.x
        self.Game[objPos] = None
 
 
+#scena hlavniho menu
+#pouze zobrazuje info a 
 class MenuScena(scena):
    def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
