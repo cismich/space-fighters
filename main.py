@@ -87,6 +87,7 @@ class Nepritel(Object):
       self.Movecounter -= 1
       if self.y > 13:
          hraScena.lives -= 1
+         hraScena.pocetNepratel -= 1
          hraScena.ObjDestory(self)
 
           
@@ -122,12 +123,12 @@ class HraScena(scena):
       self.InfoScreen.rowconfigure(3,weight=1)
       self.InfoScreen.columnconfigure(1, weight=1)
       #info
-      self.levelInfo = tk.Label(self.InfoScreen, text= "Level: 1", background="black", foreground="white", font=("Cascadia Code", 12))
+      self.levelInfo = tk.Label(self.InfoScreen, text= f"Vlna: {shared['vlna']}", background="black", foreground="white", font=("Cascadia Code", 12))
       self.levelInfo.grid(row=1, column=1)
-      self.pointInfo = tk.Label(self.InfoScreen, text= "Points: 0", background="black", foreground="white", font=("Cascadia Code", 12))
+      self.pointInfo = tk.Label(self.InfoScreen, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 12))
       self.pointInfo.grid(row=2, column=1)
-      self.pointInfo = tk.Label(self.InfoScreen, text= "♡ ♡ ♡", background="black", foreground="white", font=("Cascadia Code", 12))
-      self.pointInfo.grid(row=3, column=1)
+      self.zivotInfo = tk.Label(self.InfoScreen, text= "♡ " * (shared['u_zivot'] + 3), background="black", foreground="white", font=("Cascadia Code", 12))
+      self.zivotInfo.grid(row=3, column=1)
 
       #hra
       self.spaceX = 20
@@ -178,6 +179,13 @@ class HraScena(scena):
           if self.lives > 3:
              shared["u_zivot"] = self.lives - 3
           self.hra.LoadScene("Shop")
+
+       
+       self.pointInfo.configure(text= f"Points: {shared['body']}")
+       self.zivotInfo.configure(text= "♡ " * self.lives)
+
+       if self.lives <= 0:
+          self.hra.LoadScene("Konec")
 
 
 
@@ -348,6 +356,25 @@ class ObchodScena(scena):
       #self.poskozeni.configure(text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]")
       #self.zivot.configure(text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]")
       
+class KonecScena(scena):
+   def __init__(self, root, hra, nazev : str):
+      scena.__init__(self, root, hra, nazev)
+      self.window.columnconfigure(1, weight=1)
+      tk.Label(self.window, text= "Prohra :(", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
+      self.body = tk.Label(self.window, text= f"Skore: {shared['vlna'] * (shared['body'] )}", background="black", foreground="white", font=("Cascadia Code", 18))
+      self.body.grid(row=2, column=1, sticky="nsew")
+      tk.Label(self.window, text= "Dalsi pokus [e]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=2, column=1, sticky="nsew")
+      tk.Label(self.window, text= "ukoncit [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
+   def update(self):
+      if self.input == "back":
+        self.root.destroy()
+      elif self.input == "e":
+         shared["body"] = 0
+         shared["u_dostrel"] = 0
+         shared["u_poskozeni"] = 0
+         shared["u_zivot"] = 0
+         shared["vlna"] = 1
+         self.hra.LoadScene("Game")
 
 class hra:
   def __init__(self):
@@ -402,6 +429,8 @@ class hra:
         self.currentScene = HraScena(self.root, self, "Game")
      elif scene == "Shop":
         self.currentScene = ObchodScena(self.root, self, "Shop")
+     elif scene == "Konec":
+        self.currentScene = KonecScena(self.root, self, "Shop")
 
 
   def CaptureInput(self, inputStr : str):
