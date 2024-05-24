@@ -3,7 +3,7 @@ projekt do ICT 5.AV
 
 ## Info
 
-Hráč ovládá "vesmírnou loď" a snaží se zabránit nepřátelům se k němu přiblížit.
+Hráč ovládá "vesmírnou loď" a snaží se zničit nepřátele než se k němu dostanou moc blízko.
 Pokud hráč zničí dostatek nepřátel v dané úrovní dostane se do obchodu kde si může koupit vylepšení.
 
 **Vylepšení dostřelu** - střely letí déle než zmizí.
@@ -14,8 +14,10 @@ Pokud hráč zničí dostatek nepřátel v dané úrovní dostane se do obchodu 
 
 V každém dalším levelu/vlně jsou nepřátelé silnější (více životů) a rychleji se pohybují
 
+Pokud nepřátelé překročí čáru `-----------` tak hráč ztratí 1 život. Hráč se může pohybovat po celé hrací ploše bez omezení.
+
 Momentálně je trochu problém moc vysoká obtížnost hry, ale třeba se to někdy zlepší.
-Moje nejvyšší skíre je zatím 8400.
+Moje nejvyšší skóre je zatím 8400.
 
 ## Ovládání
 
