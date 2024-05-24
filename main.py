@@ -36,7 +36,6 @@ class scena:
        self.window = tk.Frame(self.root, background = "black")
        self.window.grid(row=1, column=1, sticky="nsew")
        
-       self.isloaded = False
        
        #aktualni input 
        self.input = None
@@ -44,9 +43,6 @@ class scena:
        self.nazev = nazev
    def __del__(self):
       self.unload()
-   def load(self):
-       self.isloaded = True
-       return
    def unload(self):
        
        #smaze vsechny objekty ve scene
@@ -391,7 +387,7 @@ class HraScena(scena):
 
 
 #scena hlavniho menu
-#pouze zobrazuje info a 
+#pouze zobrazuje info a umoznuje zacit hru a nebo ji ukoncit 
 class MenuScena(scena):
    def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
@@ -402,28 +398,42 @@ class MenuScena(scena):
       tk.Label(self.window, text= "odejit [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
    def update(self):
       if self.input == "back":
-        self.root.destroy()
+        self.root.destroy() #pri spusteni teto funkce vznikne chyba a program spadne, to je ale uplne jedno protoze ho stejne chceme vypnout :) takze to vlastne funguje presne podle planu
       elif self.input == "shoot":
          self.hra.LoadScene("Game")
 
+#scena obchodu
+#slouzi pro nakup vylepseni
 class ObchodScena(scena):
    def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
-      #self.window.rowconfigure(5, weight=1)
       self.window.columnconfigure(1, weight=1)
+
+      #texty obchodu
+
       tk.Label(self.window, text= "Obchod", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
+
       self.body = tk.Label(self.window, text= f"Body: {shared['body']}", background="black", foreground="white", font=("Cascadia Code", 18))
       self.body.grid(row=2, column=1, sticky="nsew")
+
       tk.Label(self.window, text= "Pokracovat [e]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
+
       self.dostrel = tk.Label(self.window, text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [r]", background="black", foreground="white", font=("Cascadia Code", 18))
       self.dostrel.grid(row=4, column=1, sticky="nsew")
+
       self.poskozeni = tk.Label(self.window, text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [t]", background="black", foreground="white", font=("Cascadia Code", 18))
       self.poskozeni.grid(row=5, column=1, sticky="nsew")
+
       self.zivot = tk.Label(self.window, text= f"Koupit zivot navic (100) [f]", background="black", foreground="white", font=("Cascadia Code", 18))
       self.zivot.grid(row=6, column=1, sticky="nsew")
+
       tk.Label(self.window, text= "Ukoncit hru [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=7, column=1, sticky="nsew")
       self.wait = True
    def update(self):
+      #pro nakup pouzivam klavesy e, r, t, f
+      #protoze kdyz jsem zkousel w, a, s, d tak se stavalo ze se neco koupilo samo protoze jsem mel klavesu stale zmacknutou z toho jak jsem hral
+
+
       if self.input == "back":
         self.root.destroy()
       elif self.input == "e":
@@ -435,8 +445,8 @@ class ObchodScena(scena):
       elif self.input == "f":
          self.koupit("u_zivot")
       self.input = None
+
    def koupit(self, upgrade):
-      #cena = ((shared[upgrade] * 2) + 1) * 100
       if upgrade == 'u_zivot':
          cena = 100
       else:
@@ -447,25 +457,32 @@ class ObchodScena(scena):
       shared["body"] -= cena
       shared[upgrade] += 1
 
+      #misto toho abych aktualizoval texty tak proste znovu nactu obchod.
+      #hrac si toho ani nevsimne
       self.hra.LoadScene("Shop")
-      #self.body.configure(text= f"Body: {shared['body']}")
-      #self.dostrel.configure(text= f"Vylepseni dostrelu ({(shared['u_dostrel'] + 1)*100}) [d]")
-      #self.poskozeni.configure(text= f"Vylepseni poskozeni ({(shared['u_poskozeni'] + 1)*100}) [a]")
-      #self.zivot.configure(text= f"Vylepseni zivotu ({(shared['u_zivot'] + 1)*100}) [w]")
       
+#scena prohry
+#zobrazuje finalni skore a moznost zacit znovu
 class KonecScena(scena):
    def __init__(self, root, hra, nazev : str):
       scena.__init__(self, root, hra, nazev)
       self.window.columnconfigure(1, weight=1)
+      
+      #texty
+
       tk.Label(self.window, text= "Prohra :(", background="black", foreground="white", font=("Cascadia Code", 48)).grid(row=1, column=1, sticky="nsew")
+
       self.body = tk.Label(self.window, text= f"Skore: {shared['vlna'] * (shared['body'] )}", background="black", foreground="white", font=("Cascadia Code", 18))
       self.body.grid(row=2, column=1, sticky="nsew")
+
       tk.Label(self.window, text= "Dalsi pokus [e]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=3, column=1, sticky="nsew")
       tk.Label(self.window, text= "ukoncit [q]", background="black", foreground="white", font=("Cascadia Code", 18)).grid(row=4, column=1, sticky="nsew")
    def update(self):
       if self.input == "back":
         self.root.destroy()
       elif self.input == "e":
+         #pred nactenim hlavni sceny musime resetovat tyto hodnoty, jinak bychom stale pokracovali ve stejne hre
+
          shared["body"] = 0
          shared["u_dostrel"] = 0
          shared["u_poskozeni"] = 0
@@ -473,8 +490,12 @@ class KonecScena(scena):
          shared["vlna"] = 1
          self.hra.LoadScene("Game")
 
+
+#hlavni classa
 class hra:
   def __init__(self):
+      
+      #vytvoreni okna
       self.root = tk.Tk()
       self.root.geometry("800x400")
       self.root.title("Space fighters")
@@ -482,8 +503,11 @@ class hra:
 
       self.root.columnconfigure(1, weight = 1)
       self.root.rowconfigure(1, weight = 1)
+      
       #sceny
+
       self.currentScene : scena = None
+      
       #input
       self.root.bind("w", lambda e : self.CaptureInput("up"))
       self.root.bind("s", lambda e : self.CaptureInput("down"))
@@ -497,28 +521,41 @@ class hra:
       self.root.bind("<space>", lambda e : self.CaptureInput("shoot"))
       self.currentInput : str = None
 
+      #nastavime aby se za 1000ms (nevim jestli je potreba 1000ms ale radsi pockam aby se vsechno stihlo nacist) spustila funkce update a spustime tkinter.
       self.root.after(1000, self.update)
+
       self.root.mainloop()
   def update(self):
-      self.inputUpdate()
-      self.GameUpdate()
-      self.WindowUpdate()
+      
+      #update hry postupuje v tomto poradi
+      
+      self.inputUpdate() # zachytava input
+
+      self.GameUpdate() # updatuje hru a vsecho
+      
+      self.WindowUpdate() # planoval jsem ze tato funkce bude delat neco dulezitejsiho ale zatim pouze nacte hlavni menu
+      
       self.root.after(100, self.update)
+
   def inputUpdate(self):
+      #pokud mame nejaky input predame ho funkci v aktualni scene
       if self.currentInput:
          self.currentScene.updateInput(self.currentInput)
       self.currentInput = None
       return
+  
   def GameUpdate(self):
+      #aktualizujeme aktualni scenu
       if self.currentScene:
          self.currentScene.update()
       return
   def WindowUpdate(self):
+      #zatim pouze vytvari hlavni menu
       if not self.currentScene:
           self.currentScene = scena(self.root, self, "Main")
-      if not self.currentScene.isloaded :
-          self.currentScene.load()
+
   def LoadScene(self, scene : str):
+     #nacte vyzadanou scenu podle jmena, aktualni scena se sama smaze protoze implementuje __del__
      self.currentScene = None
      if scene == "Menu":
        self.currentScene = MenuScena(self.root, self, "Menu")
@@ -531,5 +568,13 @@ class hra:
 
 
   def CaptureInput(self, inputStr : str):
+      #zachytavani inputu, tato funkce je spoustena tkinterem protoze jsou klavesy na ni napojeny
       self.currentInput = inputStr
+
+
+
+
+
+
+#Zacne hru
 hra()
